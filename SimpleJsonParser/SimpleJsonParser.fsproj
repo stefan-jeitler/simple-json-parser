@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Include="Position.fs" />
+      <Compile Include="Input.fs" />
+      <Compile Include="ParserLibrary.fs" />
+      <Compile Include="JParser.fs" />
+    </ItemGroup>
+
+</Project>
