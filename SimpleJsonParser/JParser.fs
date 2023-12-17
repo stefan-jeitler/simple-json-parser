@@ -93,9 +93,51 @@ let jNumber =
                 "e" + sign + digits // e.g. "e-12"
 
         (signStr + intPart + fractionPartStr + expPartStr) |> float |> JNumber
-        
+
     optSign .>>. intPart .>>. opt fractionPart .>>. opt exponentPart
     |>> convertToJNumber
     <?> "number"
 
 let jNumber' = jNumber .>> spaces1
+
+let createParserForwardedToRef<'a> () =
+
+    let dummyParser: Parser<'a> =
+        let innerFn _ = failwith "unfixed forwarded parser"
+        { parseFn = innerFn; label = "unknown" }
+
+    let parserRef = ref dummyParser
+
+    let innerFn input = runOnInput parserRef.Value input
+    let wrapperParser = { parseFn = innerFn; label = "unknown" }
+
+    wrapperParser, parserRef
+
+let jValue, jValueRef = createParserForwardedToRef<JValue> ()
+jValueRef.Value <- jNumber
+
+let jArray =
+    let left = pChar '[' .>> spaces
+    let right = pChar ']' .>> spaces
+    let comma = pChar ',' .>> spaces
+    let value = jValue .>> spaces
+
+    let values = sepBy value comma
+
+    between left values right |>> JArray <?> "array"
+
+let jObject =
+    let left = spaces >>. pChar '{' .>> spaces
+    let right = pChar '}' .>> spaces
+    let colon = pChar ':' .>> spaces
+    let comma = pChar ',' .>> spaces
+    let key = quotedString .>> spaces
+    let value = jValue .>> spaces
+
+    let keyValue = (key .>> colon) .>>. value
+    let keyValues = sepBy keyValue comma
+
+    between left keyValues right |>> Map.ofList |>> JObject <?> "object"
+
+
+jValueRef.Value <- choice [ jNull; jBool; jNumber; jString; jArray; jObject ]
